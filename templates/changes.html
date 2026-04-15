@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    /* ── Page heading ── */
+    .page-header {
+        border-left: 4px solid #212529;
+        padding-left: 12px;
+        margin-bottom: 28px;
+    }
+    .page-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #212529;
+    }
+    .page-header p {
+        margin: 4px 0 0 0;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    /* ── Input card ── */
+    .input-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 28px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .input-card .form-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .input-card select[multiple] {
+        font-size: 0.82rem;
+    }
+    .input-card .hint {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 3px;
+    }
+
+    /* ── Results section ── */
+    .results-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #e9ecef;
+        font-size: 0.85rem;
+        color: #495057;
+    }
+    .results-meta strong {
+        color: #212529;
+    }
+
+    /* ── Teacher card ── */
+    .teacher-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .teacher-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 11px 18px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .teacher-card-header.absent {
+        background: #dc3545;
+        color: #fff;
+    }
+    .teacher-card-header.replacement {
+        background: #212529;
+        color: #fff;
+    }
+    .teacher-card-header .name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* ── Schedule table inside card ── */
+    .teacher-card .table {
+        margin-bottom: 0;
+        font-size: 0.8rem;
+    }
+    .teacher-card .table thead th {
+        background: #f1f3f5;
+        color: #495057;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 8px 12px;
+        text-align: center;
+        vertical-align: middle;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .teacher-card .table tbody td {
+        padding: 8px 12px;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    /* ── Row states ── */
+    .row-original  { background: #d4edda; }
+    .row-replacement { background: #fff3cd; }
+    .row-practical { background: #cce5ff; }
+    .row-free td   { color: #adb5bd; font-style: italic; }
+
+    /* ── Slot number ── */
+    .slot-col {
+        font-weight: 700;
+        color: #495057;
+        width: 60px;
+    }
+
+    /* ── Status badges ── */
+    .badge-original    { background: #28a745; color: #fff; }
+    .badge-replacement { background: #ffc107; color: #212529; }
+    .badge-practical   { background: #0d6efd; color: #fff; }
+    .badge-free        { background: #adb5bd; color: #fff; }
+    .badge-absent-lbl  { background: #ffc107; color: #212529; }
+
+    .badge-sm {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+
+    /* ── Download button ── */
+    .btn-download {
+        background: transparent;
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.7);
+        border-radius: 5px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        text-decoration: none;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .btn-download:hover {
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        border-color: #fff;
+    }
+
+    /* ── Warning alert ── */
+    .alert-not-ready {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-left: 4px solid #ffc107;
+        border-radius: 6px;
+        padding: 12px 16px;
+        color: #856404;
+        font-size: 0.875rem;
+        margin-bottom: 20px;
+    }
+
+    /* ── Divider ── */
+    .section-divider {
+        border: none;
+        border-top: 2px solid #e9ecef;
+        margin: 28px 0 22px 0;
+    }
+
+    /* ── Result heading ── */
+    .result-heading {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 4px;
+    }
+</style>
+
+<!-- Page heading -->
+<div class="page-header">
+    <h2>Manage Absentee</h2>
+    <p>Generate replacement schedules for absent teachers</p>
+</div>
+
+<!-- Not ready warning -->
+{% if not timetable_ready %}
+<div class="alert-not-ready">
+    ⚠️ Timetable has not been generated yet.
+    <a href="/generate-timetable" style="color:#856404; font-weight:600;">Generate it first →</a>
+</div>
+{% endif %}
+
+<!-- ── Input form ── -->
+<div class="input-card">
+    <form method="POST" action="/changes">
+        <div class="row g-3 align-items-end">
+
+            <!-- Day selector -->
+            <div class="col-md-2">
+                <label class="form-label">Day</label>
+                <select name="day" class="form-select form-select-sm" required
+                        {% if not timetable_ready %}disabled{% endif %}>
+                    <option value="" disabled
+                        {% if not selected_day %}selected{% endif %}>
+                        — day —
+                    </option>
+                    {% for d in days %}
+                    <option value="{{ d }}"
+                        {% if d == selected_day %}selected{% endif %}>
+                        {{ d }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Absent teachers multi-select -->
+            <div class="col-md-5">
+                <label class="form-label">Absent Teachers</label>
+                <select name="absent_teachers" class="form-select"
+                        multiple size="5" required
+                        {% if not timetable_ready %}disabled{% endif %}>
+                    {% for t in teachers %}
+                    <option value="{{ t }}"
+                        {% if t in absent_teachers %}selected{% endif %}>
+                        {{ t }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <p class="hint">Hold Ctrl / Cmd to select multiple teachers</p>
+            </div>
+
+            <!-- Submit -->
+            <div class="col-auto">
+                <button type="submit" class="btn btn-danger btn-sm px-4"
+                        {% if not timetable_ready %}disabled{% endif %}>
+                    Generate Replacement
+                </button>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<!-- ── Results ── -->
+{% if result %}
+
+<hr class="section-divider">
+
+<!-- Results meta bar -->
+<div class="results-meta">
+    <strong>{{ selected_day }}</strong>
+    <span style="color:#dee2e6;">|</span>
+    <span>Absent:</span>
+    {% for t in absent_teachers %}
+        <span class="badge-sm" style="background:#dc3545; color:#fff; padding:3px 8px; border-radius:4px;">
+            {{ t }}
+        </span>
+    {% endfor %}
+    <span style="color:#dee2e6;">|</span>
+    <span>{{ result | length }} teacher(s) affected</span>
+</div>
+
+<!-- Build absent param string for PDF links -->
+{% set absent_param = absent_teachers | join(",") %}
+
+<!-- ── Per-teacher cards ── -->
+{% for teacher_name, schedule in result.items() %}
+
+<div class="teacher-card">
+
+    <!-- Card header -->
+    <div class="teacher-card-header
+        {% if teacher_name in absent_teachers %}absent{% else %}replacement{% endif %}">
+
+        <div class="name">
+            {% if teacher_name in absent_teachers %}
+                🔴 {{ teacher_name }}
+                <span class="badge-sm badge-absent-lbl">ABSENT</span>
+            {% else %}
+                👤 {{ teacher_name }}
+            {% endif %}
+        </div>
+
+        <a href="/absentee-pdf/{{ selected_day }}/{{ teacher_name }}?absent={{ absent_param }}"
+           class="btn-download">
+            ⬇ Download PDF
+        </a>
+    </div>
+
+    <!-- Schedule table -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th style="width:60px;">Slot</th>
+                <th>Subject</th>
+                <th>Class</th>
+                <th style="width:120px;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in schedule %}
+
+            {# Determine row class #}
+            {% if row.get("is_practical") %}
+                <tr class="row-practical">
+            {% elif row.is_replacement %}
+                <tr class="row-replacement">
+            {% elif row.subject == "FREE" %}
+                <tr class="row-free">
+            {% else %}
+                <tr class="row-original">
+            {% endif %}
+
+                <td class="slot-col">{{ row.slot + 1 }}</td>
+                <td style="text-align:left;">{{ row.subject }}</td>
+                <td>{{ row.class }}</td>
+                <td>
+                    {% if row.get("is_practical") %}
+                        <span class="badge-sm badge-practical">Practical</span>
+                    {% elif row.is_replacement %}
+                        <span class="badge-sm badge-replacement">Replacement</span>
+                    {% elif row.subject == "FREE" %}
+                        <span class="badge-sm badge-free">Free</span>
+                    {% else %}
+                        <span class="badge-sm badge-original">Original</span>
+                    {% endif %}
+                </td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div><!-- /.teacher-card -->
+{% endfor %}
+
+<!-- Legend -->
+<div style="display:flex; gap:16px; flex-wrap:wrap; padding:10px 14px;
+            background:#f8f9fa; border-radius:6px; border:1px solid #e9ecef;
+            font-size:0.78rem; color:#495057; margin-top:8px;">
+    <div style="display:flex; align-items:center; gap:6px;">
+        <div style="width:12px; height:12px; border-radius:3px;
+                    background:#d4edda; border:1px solid #28a745;"></div>
+        Original lecture
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+        <div style="width:12px; height:12px; border-radius:3px;
+                    background:#fff3cd; border:1px solid #ffc107;"></div>
+        Replacement assigned
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+        <div style="width:12px; height:12px; border-radius:3px;
+                    background:#cce5ff; border:1px solid #0d6efd;"></div>
+        Practical (unchanged)
+    </div>
+    <div style="display:flex; align-items:center; gap:6px; color:#adb5bd;">
+        <em>FREE</em> — no lecture
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

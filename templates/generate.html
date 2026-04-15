@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .page-header {
+        border-left: 4px solid #212529;
+        padding-left: 12px;
+        margin-bottom: 28px;
+    }
+    .page-header h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #212529; }
+    .page-header p  { margin: 4px 0 0 0; color: #6c757d; font-size: 0.875rem; }
+
+    /* ── Form card ── */
+    .form-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 22px 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .form-card .form-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 4px;
+    }
+    .form-card .form-control,
+    .form-card .form-select {
+        font-size: 0.875rem;
+        border-radius: 6px;
+    }
+
+    /* ── Entries table ── */
+    .entries-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .entries-card-header {
+        background: #212529;
+        color: #fff;
+        padding: 11px 18px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .count-badge {
+        background: #6c757d;
+        color: #fff;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        padding: 1px 8px;
+        font-weight: 600;
+    }
+    .entries-card .table {
+        margin-bottom: 0;
+        font-size: 0.82rem;
+    }
+    .entries-card .table thead th {
+        background: #343a40;
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 9px 12px;
+        border-color: #495057;
+    }
+    .entries-card .table tbody td {
+        padding: 8px 12px;
+        vertical-align: middle;
+    }
+
+    /* ── Generate button row ── */
+    .generate-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 32px;
+    }
+
+    /* ── Timetable section ── */
+    .tt-section {
+        margin-bottom: 36px;
+    }
+    .tt-class-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #212529;
+        color: #fff;
+        border-radius: 8px 8px 0 0;
+        padding: 10px 18px;
+    }
+    .tt-class-header h5 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+    .btn-dl {
+        background: transparent;
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.65);
+        border-radius: 5px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        text-decoration: none;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .btn-dl:hover {
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        border-color: #fff;
+    }
+    .tt-table-wrap {
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        overflow-x: auto;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        margin-bottom: 0;
+    }
+    .tt-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+        margin: 0;
+    }
+    .tt-table th {
+        background: #343a40;
+        color: #fff;
+        text-align: center;
+        padding: 8px 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+        border: 1px solid #495057;
+    }
+    .tt-table td {
+        text-align: center;
+        padding: 7px 8px;
+        border: 1px solid #dee2e6;
+        vertical-align: middle;
+        min-width: 110px;
+    }
+    .tt-table .slot-num {
+        background: #f8f9fa;
+        font-weight: 700;
+        color: #495057;
+        width: 50px;
+        min-width: 50px;
+    }
+
+    /* Cell colour coding */
+    .cell-theory    { background: #d4edda; color: #155724; font-weight: 600; }
+    .cell-practical { background: #cce5ff; color: #004085; font-weight: 600; font-size: 0.72rem; }
+    .cell-free      { color: #adb5bd; font-style: italic; font-size: 0.75rem; }
+    .cell-empty     { color: #dee2e6; }
+
+    /* ── Legend ── */
+    .tt-legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 8px 14px;
+        background: #f8f9fa;
+        border-radius: 0 0 8px 8px;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        font-size: 0.75rem;
+        color: #495057;
+        margin-top: -1px;
+    }
+    .legend-dot {
+        display: inline-block;
+        width: 11px; height: 11px;
+        border-radius: 3px;
+        margin-right: 4px;
+        vertical-align: middle;
+    }
+
+    /* ── Subject dropdown hint ── */
+    #subject-select option:disabled {
+        color: #adb5bd;
+    }
+</style>
+
+<!-- Page heading -->
+<div class="page-header">
+    <h2>Add &amp; Generate Timetable</h2>
+    <p>Configure subject-teacher mappings then generate the weekly timetable</p>
+</div>
+
+<!-- ── Entry form ── -->
+<div class="form-card">
+    <form method="POST" action="/add-entry">
+        <div class="row g-3">
+
+            <!-- Year -->
+            <div class="col-md-2">
+                <label class="form-label">Year</label>
+                <select name="year" id="year-select" class="form-select form-select-sm">
+                    <option value="FY">FY</option>
+                    <option value="SY">SY</option>
+                    <option value="TY">TY</option>
+                    <option value="Final Year">Final yr</option>
+                </select>
+            </div>
+
+            <!-- Division -->
+            <div class="col-md-2">
+                <label class="form-label">Division</label>
+                <select name="division" class="form-select form-select-sm">
+                    <option>A</option>
+                    <option>B</option>
+                    <option>BOTH</option>
+                </select>
+            </div>
+
+            <!-- Subject — populated dynamically by JS -->
+            <div class="col-md-3">
+                <label class="form-label">Subject</label>
+                <select name="subject" id="subject-select" class="form-select form-select-sm">
+                    <!-- options injected by JS on load / year change -->
+                </select>
+            </div>
+
+            <!-- Teacher -->
+            <div class="col-md-3">
+                <label class="form-label">Teacher</label>
+                <select name="teacher" class="form-select form-select-sm">
+                    {% for t in teachers %}
+                    <option>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Theory -->
+            <div class="col-md-1">
+                <label class="form-label">Theory/wk</label>
+                <input type="number" name="theory" min="0" value="0"
+                       class="form-control form-control-sm text-center">
+            </div>
+
+            <!-- Practical -->
+            <div class="col-md-1">
+                <label class="form-label">Prac/wk</label>
+                <input type="number" name="practical" min="0" value="0"
+                       class="form-control form-control-sm text-center">
+            </div>
+
+        </div>
+        <div class="mt-3">
+            <button type="submit" class="btn btn-dark btn-sm px-4">
+                + Add Entry
+            </button>
+        </div>
+    </form>
+
+    <!-- Error message (shown when subject-year mismatch rejected by backend) -->
+    {% if error %}
+    <div class="alert alert-danger mt-3 py-2 mb-0" style="font-size:0.85rem;">
+        ⚠️ {{ error }}
+    </div>
+    {% endif %}
+</div>
+
+<!-- ── Current entries ── -->
+<div class="entries-card">
+    <div class="entries-card-header">
+        📋 Current Entries
+        <span class="count-badge">{{ data | length }}</span>
+    </div>
+
+    {% if data %}
+    <table class="table table-bordered table-hover mb-0">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Year</th>
+                <th>Division</th>
+                <th>Subject</th>
+                <th>Teacher</th>
+                <th>Theory / Wk</th>
+                <th>Practical / Wk</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in data %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td><span class="badge bg-secondary">{{ entry.year }}</span></td>
+                <td>{{ entry.division }}</td>
+                <td><strong>{{ entry.subject }}</strong></td>
+                <td>{{ entry.teacher }}</td>
+                <td class="text-center">{{ entry.theory }}</td>
+                <td class="text-center">{{ entry.practical }}</td>
+                <td>
+                    <form method="POST" action="/delete-entry"
+                          onsubmit="return confirm('Delete this entry?');"
+                          style="margin:0;">
+                        <input type="hidden" name="index" value="{{ loop.index0 }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding:16px 20px; color:#adb5bd; font-size:0.875rem; font-style:italic;">
+        No entries added yet.
+    </div>
+    {% endif %}
+</div>
+
+<!-- ── Generate button ── -->
+<div class="generate-row">
+    <a href="/generate-timetable" class="btn btn-success px-5">
+        ⚡ Generate Timetable
+    </a>
+    {% if timetable %}
+    <span style="font-size:0.8rem; color:#28a745; font-weight:600;">
+        ✓ Timetable generated — scroll down to view
+    </span>
+    {% endif %}
+</div>
+
+<!-- ── Timetable output ── -->
+{% if timetable %}
+
+<hr style="border-color:#e9ecef; margin-bottom:28px;">
+
+<div class="page-header" style="margin-bottom:20px;">
+    <h2>Generated Timetable</h2>
+    <p>Click "Download PDF" on any class to save that class's timetable</p>
+</div>
+
+{% set days = ["Mon","Tue","Wed","Thu","Fri","Sat"] %}
+{% set day_slots = {"Mon":7,"Tue":7,"Wed":7,"Thu":7,"Fri":7,"Sat":4} %}
+
+{% for class_name, day_map in timetable.items() %}
+<div class="tt-section">
+
+    <!-- Class header with download button -->
+    <div class="tt-class-header">
+        <h5>{{ class_name }}</h5>
+        <a href="/class-pdf/{{ class_name }}" class="btn-dl">
+            ⬇ Download PDF
+        </a>
+    </div>
+
+    <!-- Timetable grid -->
+    <div class="tt-table-wrap">
+        <table class="tt-table">
+            <thead>
+                <tr>
+                    <th>Slot</th>
+                    {% for day in days %}
+                    <th>{{ day }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% set max_s = 7 %}
+                {% for s in range(max_s) %}
+                <tr>
+                    <td class="slot-num">{{ s + 1 }}</td>
+                    {% for day in days %}
+                        {% set max_for_day = 4 if day == "Sat" else 7 %}
+                        {% if s >= max_for_day %}
+                            <td class="cell-empty">—</td>
+                        {% else %}
+                            {% set cell = day_map[day][s] %}
+                            {% if cell is none or cell == "" %}
+                                <td class="cell-empty">—</td>
+                            {% elif cell == "FREE" %}
+                                <td class="cell-free">FREE</td>
+                            {% elif cell.startswith("PRAC") %}
+                                <td class="cell-practical">{{ cell }}</td>
+                            {% else %}
+                                <td class="cell-theory">{{ cell }}</td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Legend per class -->
+    <div class="tt-legend">
+        <span>
+            <span class="legend-dot"
+                  style="background:#d4edda;border:1px solid #28a745;"></span>
+            Theory
+        </span>
+        <span>
+            <span class="legend-dot"
+                  style="background:#cce5ff;border:1px solid #0066cc;"></span>
+            Practical
+        </span>
+        <span style="color:#adb5bd;">
+            <em>FREE</em> — no lecture
+        </span>
+    </div>
+
+</div>
+{% endfor %}
+
+{% endif %}
+
+<!-- ── Dynamic Subject Dropdown JS ── -->
+<script>
+    // subjects_json is passed from Flask as a Python dict → JS object
+    // Shape: { "FY": ["P&S", ...], "SY": [...], "TY": [...] }
+    const SUBJECTS_BY_YEAR = {{ subjects_json | tojson }};
+
+    /**
+     * Rebuild the subject <select> based on the currently selected year.
+     * Called on page load and whenever the year dropdown changes.
+     */
+    function populateSubjects() {
+        const yearSelect    = document.getElementById('year-select');
+        const subjectSelect = document.getElementById('subject-select');
+
+        if (!yearSelect || !subjectSelect) return;
+
+        const selectedYear = yearSelect.value;
+        const subjectList  = SUBJECTS_BY_YEAR[selectedYear] || [];
+
+        // Clear existing options
+        subjectSelect.innerHTML = '';
+
+        if (subjectList.length === 0) {
+            const opt = document.createElement('option');
+            opt.value    = '';
+            opt.textContent = '— no subjects for ' + selectedYear + ' —';
+            opt.disabled = true;
+            opt.selected = true;
+            subjectSelect.appendChild(opt);
+            return;
+        }
+
+        subjectList.forEach(function(subj) {
+            const opt = document.createElement('option');
+            opt.value       = subj;
+            opt.textContent = subj;
+            subjectSelect.appendChild(opt);
+        });
+    }
+
+    // Bind year change event
+    document.getElementById('year-select').addEventListener('change', populateSubjects);
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', populateSubjects);
+</script>
+
+{% endblock %}

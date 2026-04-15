@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial; }
+        h2 { text-align: center; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 6px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+<h2>{{ teacher }} - Weekly Timetable</h2>
+
+<table>
+    <tr>
+        <th>Slot</th>
+        {% for day in days %}
+            <th>{{ day }}</th>
+        {% endfor %}
+    </tr>
+
+    {% for i in range(max_slots) %}
+    <tr>
+        <td>{{ i+1 }}</td>
+
+        {% for day in days %}
+        <td>
+
+            {% if i < week_schedule[day]|length %}
+                {% set val = week_schedule[day][i] %}
+
+                {% if val == "FREE" %}
+                    FREE
+
+                {% elif val is mapping %}
+                    {{ val.subject }} ({{ val.class }})
+
+                {% elif val is iterable %}
+                    {% for item in val %}
+                        {{ item.subject }} ({{ item.class }})<br>
+                    {% endfor %}
+
+                {% else %}
+                    {{ val }}
+                {% endif %}
+
+            {% else %}
+                FREE
+            {% endif %}
+
+        </td>
+        {% endfor %}
+
+    </tr>
+    {% endfor %}
+
+</table>
+
+</body>
+</html>

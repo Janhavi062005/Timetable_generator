@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .page-header {
+        border-left: 4px solid #212529;
+        padding-left: 12px;
+        margin-bottom: 28px;
+    }
+    .page-header h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #212529; }
+    .page-header p  { margin: 4px 0 0 0; color: #6c757d; font-size: 0.875rem; }
+
+    .manage-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .manage-card-header {
+        background: #212529;
+        color: #fff;
+        padding: 11px 18px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .count-badge {
+        background: #6c757d;
+        color: #fff;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        padding: 1px 8px;
+        font-weight: 600;
+    }
+    .manage-card-body { padding: 18px 20px; }
+
+    /* Batch inputs */
+    .batch-row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .batch-field { display: flex; flex-direction: column; gap: 4px; }
+    .batch-field label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .batch-field input {
+        width: 90px;
+        text-align: center;
+        font-size: 1rem;
+        font-weight: 700;
+        padding: 6px 10px;
+        border: 1.5px solid #ced4da;
+        border-radius: 6px;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    .batch-field input:focus { border-color: #212529; }
+
+    /* Add row */
+    .add-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 0;
+    }
+    .add-row input {
+        width: 50%;
+        font-size: 0.875rem;
+        padding: 7px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    .add-row input:focus { border-color: #212529; }
+
+    /* Delete row */
+    .del-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .del-row select {
+        width: 50%;
+        font-size: 0.875rem;
+        padding: 7px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        outline: none;
+        transition: border-color 0.15s;
+        background: #fff;
+        color: #212529;
+    }
+    .del-row select:focus { border-color: #212529; }
+
+    /* Buttons */
+    .btn-save {
+        background: #198754;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+        height: 38px;
+    }
+    .btn-save:hover { background: #157347; }
+
+    .btn-add {
+        background: #212529;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 18px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+        height: 38px;
+        white-space: nowrap;
+    }
+    .btn-add:hover { background: #343a40; }
+
+    .btn-del {
+        background: #dc3545;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 18px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+        height: 38px;
+        white-space: nowrap;
+    }
+    .btn-del:hover { background: #bb2d3b; }
+
+    /* Section divider */
+    .inner-divider {
+        border: none;
+        border-top: 1px solid #e9ecef;
+        margin: 18px 0;
+    }
+
+    .section-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+
+    /* ── Year tab buttons ── */
+    .year-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 12px;
+    }
+    .year-tab-btn {
+        padding: 6px 20px;
+        border-radius: 6px;
+        border: 1.5px solid #212529;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        background: #fff;
+        color: #212529;
+        transition: background 0.15s, color 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .year-tab-btn.active {
+        background: #212529;
+        color: #fff;
+    }
+    .year-tab-btn:hover:not(.active) {
+        background: #f8f9fa;
+    }
+    .tab-count {
+        background: rgba(108,117,125,0.25);
+        border-radius: 8px;
+        font-size: 0.68rem;
+        padding: 1px 6px;
+        font-weight: 600;
+    }
+    .year-tab-btn.active .tab-count {
+        background: rgba(255,255,255,0.2);
+    }
+
+    /* Subject pills display */
+    .subject-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 18px;
+        min-height: 32px;
+        align-items: center;
+    }
+    .subject-pill {
+        background: #e9ecef;
+        color: #343a40;
+        border-radius: 20px;
+        padding: 3px 12px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    .no-subjects-note {
+        font-size: 0.82rem;
+        color: #adb5bd;
+        font-style: italic;
+    }
+
+    /* Year panel visibility */
+    .year-panel { display: none; }
+    .year-panel.active { display: block; }
+</style>
+
+<!-- Page heading -->
+<div class="page-header">
+    <h2>Manage Data</h2>
+    <p>Configure batches, teachers, and subjects for timetable generation</p>
+</div>
+
+<!-- ── BATCH CONFIGURATION ── -->
+<div class="manage-card">
+    <div class="manage-card-header">⚙️ Batch Configuration</div>
+    <div class="manage-card-body">
+        <p class="section-label">Number of practical batches per year</p>
+        <form method="POST" action="/set-batches">
+            <div class="batch-row">
+                <div class="batch-field">
+                    <label>FY</label>
+                    <input type="number" name="FY" min="1" max="10"
+                           value="{{ batch_config.FY }}" required>
+                </div>
+                <div class="batch-field">
+                    <label>SY</label>
+                    <input type="number" name="SY" min="1" max="10"
+                           value="{{ batch_config.SY }}" required>
+                </div>
+                <div class="batch-field">
+                    <label>TY</label>
+                    <input type="number" name="TY" min="1" max="10"
+                           value="{{ batch_config.TY }}" required>
+                </div>
+            </div>
+            <button type="submit" class="btn-save">Save Batches</button>
+        </form>
+    </div>
+</div>
+
+<!-- ── TEACHERS ── -->
+<div class="manage-card">
+    <div class="manage-card-header">
+        👩‍🏫 Teachers
+        <span class="count-badge">{{ teachers | length }}</span>
+    </div>
+    <div class="manage-card-body">
+
+        <!-- Add -->
+        <p class="section-label">Add Teacher</p>
+        <form method="POST" action="/add-teacher">
+            <div class="add-row">
+                <input type="text" name="teacher"
+                       placeholder="e.g. Prof.A.B.Sharma" required>
+                <button type="submit" class="btn-add">+ Add Teacher</button>
+            </div>
+        </form>
+
+        <hr class="inner-divider">
+
+        <!-- Delete -->
+        <p class="section-label">Remove Teacher</p>
+        <form method="POST" action="/delete-teacher"
+              onsubmit="return confirm('Delete this teacher?');">
+            <div class="del-row">
+                <select name="teacher" required>
+                    <option value="" selected disabled>— select teacher —</option>
+                    {% for t in teachers %}
+                    <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn-del">Delete Teacher</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- ── SUBJECTS (Year-wise) ── -->
+<div class="manage-card">
+    <div class="manage-card-header">
+        📚 Subjects
+        <!-- Total count across all years -->
+        <span class="count-badge">
+            {{ subjects.values() | map('length') | sum }}
+        </span>
+    </div>
+    <div class="manage-card-body">
+
+        <!-- Year tab switcher -->
+        <div class="year-tabs">
+            {% for yr in ["FY", "SY", "TY"] %}
+            <button type="button"
+                    class="year-tab-btn {% if loop.first %}active{% endif %}"
+                    id="tab-btn-{{ yr }}"
+                    onclick="switchYearTab('{{ yr }}')">
+                {{ yr }}
+                <span class="tab-count">{{ subjects[yr] | length }}</span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Per-year panels -->
+        {% for yr in ["FY", "SY", "TY"] %}
+        <div class="year-panel {% if loop.first %}active{% endif %}"
+             id="panel-{{ yr }}">
+
+            <!-- Current subjects for this year as pills -->
+            <p class="section-label">Current {{ yr }} Subjects</p>
+            <div class="subject-pills">
+                {% if subjects[yr] %}
+                    {% for s in subjects[yr] %}
+                    <span class="subject-pill">{{ s }}</span>
+                    {% endfor %}
+                {% else %}
+                    <span class="no-subjects-note">No subjects added for {{ yr }} yet.</span>
+                {% endif %}
+            </div>
+
+            <hr class="inner-divider">
+
+            <!-- Add subject to this year -->
+            <p class="section-label">Add Subject to {{ yr }}</p>
+            <form method="POST" action="/add-subject">
+                <!-- Hidden year field — tells backend which year to add to -->
+                <input type="hidden" name="year" value="{{ yr }}">
+                <div class="add-row">
+                    <input type="text" name="subject"
+                           placeholder="e.g. DBMS" required
+                           style="text-transform:uppercase;">
+                    <button type="submit" class="btn-add">+ Add to {{ yr }}</button>
+                </div>
+            </form>
+
+            <hr class="inner-divider">
+
+            <!-- Delete subject from this year -->
+            <p class="section-label">Remove Subject from {{ yr }}</p>
+            {% if subjects[yr] %}
+            <form method="POST" action="/delete-subject"
+                  onsubmit="return confirm('Delete this subject from {{ yr }}?');">
+                <!-- Hidden year field — tells backend which year to remove from -->
+                <input type="hidden" name="year" value="{{ yr }}">
+                <div class="del-row">
+                    <select name="subject" required>
+                        <option value="" selected disabled>— select subject —</option>
+                        {% for s in subjects[yr] %}
+                        <option value="{{ s }}">{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn-del">Delete from {{ yr }}</button>
+                </div>
+            </form>
+            {% else %}
+            <p style="font-size:0.82rem; color:#adb5bd; font-style:italic; margin:0;">
+                No subjects to remove for {{ yr }}.
+            </p>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+        <!-- end year panels -->
+
+    </div>
+</div>
+
+<!-- ── Year tab JS ── -->
+<script>
+    /**
+     * Switch the visible year panel and update tab button styles.
+     * Called by onclick on each tab button.
+     */
+    function switchYearTab(yr) {
+        const years = ['FY', 'SY', 'TY'];
+
+        years.forEach(function(y) {
+            // Panel visibility
+            const panel = document.getElementById('panel-' + y);
+            if (panel) {
+                panel.classList.toggle('active', y === yr);
+            }
+            // Tab button active state
+            const btn = document.getElementById('tab-btn-' + y);
+            if (btn) {
+                btn.classList.toggle('active', y === yr);
+            }
+        });
+    }
+
+    // Initialize: FY is active by default (handled by Jinja loop.first,
+    // but JS reinforces it on load in case of future dynamic changes)
+    document.addEventListener('DOMContentLoaded', function() {
+        switchYearTab('FY');
+    });
+</script>
+
+{% endblock %}

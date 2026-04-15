@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial; }
+        h2 { text-align: center; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<h2>{{ teacher }} - {{ day }} Timetable</h2>
+
+<table>
+    <tr>
+        <th>Slot</th>
+        <th>Subject</th>
+        <th>Class</th>
+    </tr>
+
+  {% for val in schedule %}
+<tr>
+    <td>{{ val.slot }}</td>
+    <td>{{ val.subject }}</td>
+    <td>{{ val.class }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

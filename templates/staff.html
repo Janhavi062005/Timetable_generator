@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    /* ── Page heading ── */
+    .page-header {
+        border-left: 4px solid #212529;
+        padding-left: 12px;
+        margin-bottom: 28px;
+    }
+    .page-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #212529;
+    }
+    .page-header p {
+        margin: 4px 0 0 0;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    /* ── Selector card ── */
+    .selector-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 28px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    /* ── Result header bar ── */
+    .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #212529;
+        color: #fff;
+        border-radius: 8px 8px 0 0;
+        padding: 12px 20px;
+    }
+    .result-header h5 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    /* ── Timetable wrapper ── */
+    .timetable-wrapper {
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        margin-bottom: 0;
+    }
+    .timetable-wrapper .table {
+        margin-bottom: 0;
+    }
+
+    /* ── Table cells ── */
+    .table thead th {
+        background: #343a40;
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+        padding: 10px 8px;
+        border-color: #495057;
+    }
+    .table tbody td {
+        font-size: 0.8rem;
+        vertical-align: middle;
+        text-align: center;
+        padding: 8px 6px;
+    }
+    .slot-num {
+        font-weight: 700;
+        color: #495057;
+        background: #f8f9fa;
+        width: 52px;
+    }
+
+    /* ── Cell states ── */
+    .cell-theory {
+        background: #d4edda;
+    }
+    .cell-theory .subj {
+        font-weight: 600;
+        color: #155724;
+        font-size: 0.82rem;
+    }
+    .cell-theory .cls {
+        color: #28a745;
+        font-size: 0.72rem;
+        display: block;
+        margin-top: 2px;
+    }
+    .cell-practical {
+        background: #cce5ff;
+    }
+    .cell-practical .subj {
+        font-weight: 600;
+        color: #004085;
+        font-size: 0.82rem;
+    }
+    .cell-practical .cls {
+        color: #0066cc;
+        font-size: 0.72rem;
+        display: block;
+        margin-top: 2px;
+    }
+    .cell-free {
+        color: #adb5bd;
+        font-size: 0.75rem;
+        font-style: italic;
+    }
+    .cell-na {
+        background: #f8f9fa;
+        color: #ced4da;
+        font-size: 0.72rem;
+    }
+
+    /* ── Legend ── */
+    .legend {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+        padding: 10px 14px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #e9ecef;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+        color: #495057;
+    }
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+
+    /* ── Download button ── */
+    .btn-download {
+        background: #fff;
+        color: #dc3545;
+        border: 1.5px solid #dc3545;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 5px 14px;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .btn-download:hover {
+        background: #dc3545;
+        color: #fff;
+    }
+
+    /* ── Warning alert ── */
+    .alert-not-ready {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-left: 4px solid #ffc107;
+        border-radius: 6px;
+        padding: 12px 16px;
+        color: #856404;
+        font-size: 0.875rem;
+    }
+</style>
+
+<!-- Page heading -->
+<div class="page-header">
+    <h2>Staff Panel</h2>
+    <p>View full week timetable for any teacher</p>
+</div>
+
+<!-- Not ready warning -->
+{% if not timetable_ready %}
+<div class="alert-not-ready mb-4">
+    ⚠️ Timetable has not been generated yet.
+    <a href="/generate-timetable" style="color:#856404; font-weight:600;">Generate it first →</a>
+</div>
+{% endif %}
+
+<!-- Teacher selector -->
+<div class="selector-card">
+    <form method="POST" action="/staff-view">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1" style="font-size:0.875rem;">
+                    Select Teacher
+                </label>
+                <select name="teacher" class="form-select form-select-sm"
+                        style="font-size:0.875rem;" required
+                        {% if not timetable_ready %}disabled{% endif %}>
+                    <option value="" disabled
+                        {% if not selected_teacher %}selected{% endif %}>
+                        — choose a teacher —
+                    </option>
+                    {% for t in teachers %}
+                    <option value="{{ t }}"
+                        {% if t == selected_teacher %}selected{% endif %}>
+                        {{ t }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-dark btn-sm px-4"
+                        {% if not timetable_ready %}disabled{% endif %}>
+                    View Schedule
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ── Week timetable result ── -->
+{% if week_schedule and selected_teacher %}
+
+<!-- Result header -->
+<div class="result-header">
+    <h5>📅 {{ selected_teacher }} — Full Week</h5>
+    <a href="/staff-pdf/{{ selected_teacher }}" class="btn-download">
+        ⬇ Download PDF
+    </a>
+</div>
+
+<!-- Timetable -->
+<div class="timetable-wrapper">
+    <div class="table-responsive">
+        <table class="table table-bordered mb-0">
+            <thead>
+                <tr>
+                    <th style="width:52px;">Slot</th>
+                    {% for day in days %}
+                    <th>{{ day }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in range(max_slots) %}
+                <tr>
+                    <td class="slot-num">{{ s + 1 }}</td>
+
+                    {% for day in days %}
+
+                        {# Saturday only has 4 slots #}
+                        {% if day == "Sat" and s >= 4 %}
+                            <td class="cell-na">—</td>
+
+                        {% else %}
+                            {% set entry = week_schedule[day].get(s) %}
+
+                            {% if entry %}
+                                {# Detect if this is a practical slot (contains "Batch") #}
+                                {% if "Batch" in entry.subject %}
+                                    <td class="cell-practical">
+                                        <span class="subj">{{ entry.subject }}</span>
+                                        <span class="cls">{{ entry.class }}</span>
+                                    </td>
+                                {% else %}
+                                    <td class="cell-theory">
+                                        <span class="subj">{{ entry.subject }}</span>
+                                        <span class="cls">{{ entry.class }}</span>
+                                    </td>
+                                {% endif %}
+                            {% else %}
+                                <td class="cell-free">FREE</td>
+                            {% endif %}
+
+                        {% endif %}
+
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+    <div class="legend-item">
+        <div class="legend-dot" style="background:#d4edda; border:1px solid #28a745;"></div>
+        Theory lecture
+    </div>
+    <div class="legend-item">
+        <div class="legend-dot" style="background:#cce5ff; border:1px solid #0066cc;"></div>
+        Practical (your batch)
+    </div>
+    <div class="legend-item">
+        <div class="legend-dot" style="background:#f8f9fa; border:1px solid #ced4da;"></div>
+        Not applicable (Sat)
+    </div>
+    <div class="legend-item" style="color:#adb5bd;">
+        <em>FREE</em> — no lecture
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

@@ -481,14 +481,15 @@ def prepare_tasks(data_store):
                     "teacher": entry["teacher"]
                 })
             if entry["practical"] > 0:
-                # One practical task = one block (practical_count slots)
-                practical_tasks.append({
-                    "class": class_name,
-                    "year": entry["year"],
-                    "subject": entry["subject"],
-                    "teacher": entry["teacher"],
-                    "slots": entry["practical"]   # 1 or 2 consecutive slots
-                })
+    # practical = frequency (times per week) 
+             for _ in range(entry["practical"]):
+                 practical_tasks.append({
+            "class": class_name,
+            "year": entry["year"],
+            "subject": entry["subject"],
+            "teacher": entry["teacher"],
+            "slots": 2   # always 2 consecutive slots
+        })
 
     return theory_tasks, practical_tasks
 
@@ -512,95 +513,65 @@ def initialize_trackers():
 
 
 # ---------------- PRACTICAL ----------------
-
 def build_batch_rotation(class_name, practical_tasks, batch_config):
-    """
-    Build a maximally fair rotation plan for practical batches.
-
-    APPROACH: Latin square rotation
-    ─────────────────────────────────────────────────────────────────
-    LIBRARY is treated as a regular "role" alongside real subjects.
-    This means:
-      - Every batch cycles through every subject AND library equally
-      - No batch is permanently stuck on library
-      - No batch permanently misses any subject
-      - For N blocks, takes the first N rows of the full cycle
-
-    LIBRARY is added ONLY when num_batches > num_subjects.
-    If num_batches <= num_subjects: pure subject rotation, no library.
-
-    Example: 4 batches, subjects=[DBMS, CN, AI]
-      roles = [DBMS, CN, AI, LIBRARY]   ← library padded to match batches
-
-      Block 0: S1:DBMS  S2:CN    S3:AI    S4:LIB
-      Block 1: S1:CN    S2:AI    S3:LIB   S4:DBMS
-      Block 2: S1:AI    S2:LIB   S3:DBMS  S4:CN
-      Block 3: S1:LIB   S2:DBMS  S3:CN    S4:AI
-      ↑ Full cycle = 4 blocks. After this every batch had every role once.
-      For N=2 blocks → take rows 0,1. Most fair possible for 2 blocks.
-
-    Returns:
-        rotation_plan: list of sessions, each session is a list of:
-            {"batch": "S1", "subject": "DBMS", "teacher": "Prof.X"}
-        LIBRARY entries have teacher = None.
-    """
-    year         = class_name.split("-")[0]   # FY, SY, TY
+    year         = class_name.split("-")[0]
     num_batches  = batch_config.get(year, 3)
-    prefix       = year[0]                    # F, S, T
+    prefix       = year[0]
     batch_labels = [f"{prefix}{i+1}" for i in range(num_batches)]
 
-    class_tasks  = [t for t in practical_tasks if t["class"] == class_name]
+    class_tasks = [t for t in practical_tasks if t["class"] == class_name]
     if not class_tasks:
         return []
 
-    # ── Collect unique subjects in order of first appearance ─────────────
+    # ---- Unique subjects only (NO frequency logic here) ----
     seen = {}
     for t in class_tasks:
         if t["subject"] not in seen:
-            seen[t["subject"]] = t["teacher"]
-    subject_list = list(seen.keys())     # e.g. ["DBMS", "CN", "AI"]
-    teacher_list = [seen[s] for s in subject_list]
-    num_subjects = len(subject_list)
-    num_blocks   = len(class_tasks)
+            seen[t["subject"]] = {
+                "teacher": t["teacher"],
+                "slots":   t["slots"]
+            }
 
-    # ── Build the roles list ──────────────────────────────────────────────
-    # Roles = all subjects + LIBRARY slots padded to exactly num_batches
-    # If batches <= subjects: no library, roles = first num_batches subjects
-    # If batches >  subjects: pad with LIBRARY entries to reach num_batches
-    #
-    # num_library_roles = how many LIBRARY slots appear each block
-    num_library_roles = max(0, num_batches - num_subjects)
+    subjects = list(seen.keys())
 
-    # roles[i] = (subject_or_library, teacher_or_None)
+    # ---- Build roles = subjects + LIBRARY padding ----
     roles = []
-    for i in range(num_subjects):
-        roles.append((subject_list[i], teacher_list[i]))
-    for _ in range(num_library_roles):
-        roles.append(("LIBRARY", None))
 
-    # roles list now has exactly num_batches entries
-    # e.g. [("DBMS","Prof.X"), ("CN","Prof.Y"), ("AI","Prof.Z"), ("LIBRARY",None)]
+    for sub in subjects:
+        roles.append({
+            "subject": sub,
+            "teacher": seen[sub]["teacher"],
+            "slots":   seen[sub]["slots"]
+        })
 
-    # ── Latin square: shift roles by block_idx each block ────────────────
-    # Block 0: batch[0]→roles[0],  batch[1]→roles[1],  ...
-    # Block 1: batch[0]→roles[1],  batch[1]→roles[2],  ...
-    # Block k: batch[i]→roles[(i + k) % num_batches]
+    while len(roles) < num_batches:
+        roles.append({
+            "subject": "LIBRARY",
+            "teacher": None,
+            "slots":   2
+        })
+
+    # ---- EXACTLY ONE FULL ROTATION ----
     rotation_plan = []
 
-    for block_idx in range(num_blocks):
+    for block_idx in range(num_batches):
+
         session = []
+
         for batch_idx in range(num_batches):
             role_idx = (batch_idx + block_idx) % num_batches
-            subject, teacher = roles[role_idx]
+            role     = roles[role_idx]
+
             session.append({
                 "batch":   batch_labels[batch_idx],
-                "subject": subject,
-                "teacher": teacher
+                "subject": role["subject"],
+                "teacher": role["teacher"],
+                "slots":   role["slots"]
             })
+
         rotation_plan.append(session)
 
     return rotation_plan
-
 
 
 
@@ -637,7 +608,7 @@ def schedule_practicals(timetable, teacher_busy, practical_tasks, batch_config):
 
             # How many consecutive slots does this block need?
             # Use the slots value from the corresponding task
-            block_slots = class_tasks[block_idx]["slots"] if block_idx < len(class_tasks) else 2
+            block_slots = session[0]["slots"] if block_idx < len(class_tasks) else 2
 
             placed = False
 

@@ -1,5 +1,6 @@
 
 import random
+import math 
 import re
 from collections import deque
 from flask import Flask, render_template, request, make_response
@@ -513,6 +514,8 @@ def initialize_trackers():
 
 
 # ---------------- PRACTICAL ----------------
+                                                            
+
 def build_batch_rotation(class_name, practical_tasks, batch_config):
     year         = class_name.split("-")[0]
     num_batches  = batch_config.get(year, 3)
@@ -523,7 +526,7 @@ def build_batch_rotation(class_name, practical_tasks, batch_config):
     if not class_tasks:
         return []
 
-    # ---- Unique subjects only (NO frequency logic here) ----
+    # ---- unique subjects ----
     seen = {}
     for t in class_tasks:
         if t["subject"] not in seen:
@@ -534,42 +537,49 @@ def build_batch_rotation(class_name, practical_tasks, batch_config):
 
     subjects = list(seen.keys())
 
-    # ---- Build roles = subjects + LIBRARY padding ----
-    roles = []
+    # ---- split into chunks ----
+    chunks = []
+    for i in range(0, len(subjects), num_batches):
+        chunk = subjects[i:i + num_batches]
 
-    for sub in subjects:
-        roles.append({
-            "subject": sub,
-            "teacher": seen[sub]["teacher"],
-            "slots":   seen[sub]["slots"]
-        })
-
-    while len(roles) < num_batches:
-        roles.append({
-            "subject": "LIBRARY",
-            "teacher": None,
-            "slots":   2
-        })
-
-    # ---- EXACTLY ONE FULL ROTATION ----
-    rotation_plan = []
-
-    for block_idx in range(num_batches):
-
-        session = []
-
-        for batch_idx in range(num_batches):
-            role_idx = (batch_idx + block_idx) % num_batches
-            role     = roles[role_idx]
-
-            session.append({
-                "batch":   batch_labels[batch_idx],
-                "subject": role["subject"],
-                "teacher": role["teacher"],
-                "slots":   role["slots"]
+        roles = []
+        for sub in chunk:
+            roles.append({
+                "subject": sub,
+                "teacher": seen[sub]["teacher"],
+                "slots":   seen[sub]["slots"]
             })
 
-        rotation_plan.append(session)
+        # pad with LIBRARY
+        while len(roles) < num_batches:
+            roles.append({
+                "subject": "LIBRARY",
+                "teacher": None,
+                "slots":   2
+            })
+
+        chunks.append(roles)
+
+    # ---- build rotation for each chunk ----
+    rotation_plan = []
+
+    for roles in chunks:
+        for block_idx in range(num_batches):
+
+            session = []
+
+            for batch_idx in range(num_batches):
+                role_idx = (batch_idx + block_idx) % num_batches
+                role     = roles[role_idx]
+
+                session.append({
+                    "batch":   batch_labels[batch_idx],
+                    "subject": role["subject"],
+                    "teacher": role["teacher"],
+                    "slots":   role["slots"]
+                })
+
+            rotation_plan.append(session)
 
     return rotation_plan
 

@@ -34,8 +34,8 @@ PRIORITY_CONFIG = {
     # Priority 4
     "MDM": 4, "PPS": 4, "CS": 4, "CD": 4,
     # Priority 5 — lowest (subjects missing from original config, now included)
-    "ESD": 5, "CP": 5, "CSD": 5, "OE-II": 5,
-    "MIL": 5, "PYTHON": 5, "COI": 5, "LBRBA": 5,
+    "ESD": 5, "CP": 5, "OE-II": 5,
+    "MIL":5,
     "DBMS": 5, "AI": 5, "DS": 5
 }
 
